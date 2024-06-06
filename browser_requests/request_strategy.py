@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from url import URL
-import html
 import socket
 import ssl
 
@@ -76,3 +75,57 @@ class HttpStrategy(SchemeStrategy):
         s.close()
         
         return content
+    
+class ViewSourceStrategy(SchemeStrategy):
+    def request(url: URL) -> str:
+        #Create socket
+        s = socket.socket(
+            family=socket.AF_INET,
+            type=socket.SOCK_STREAM,
+            proto=socket.IPPROTO_TCP,
+        )
+        #Connect to server        
+        s.connect((url.host, url.port))
+        
+        #Wrap socket with ctx if host == "https"
+        if url.source_scheme == "https":
+            ctx = ssl.create_default_context()
+            s = ctx.wrap_socket(s, server_hostname=url.host)
+        
+        #Create request
+        request = f"GET {url.path} HTTP/1.1\r\n"
+        request += f"HOST: {url.host}\r\n"
+        request += "Connection: close\r\n"
+        request += f"USER-AGENT: PyBrowser/1.0\r\n"
+        request += "\r\n"
+        
+        #Send request
+        s.send(request.encode("utf-8"))  
+        
+        #Read response into bytes
+        response: bytes = b''
+        while True:
+            data = s.recv(1024)
+            if not data:
+                break
+            response += data
+        
+        #Decoded response
+        decoded_response = response.decode()
+        headers, source_code = decoded_response.split("\r\n\r\n", 1)
+        
+        #Get headers from response
+        response_headers = {}
+        for line in headers.splitlines():
+            if line:
+                try:
+                    header, value = line.split(":", 1)
+                    response_headers[header.casefold()] = value.strip()
+                except ValueError:
+                    continue
+        assert "transfer-encoding" not in response_headers
+        assert "content-encoding" not in response_headers
+        
+        s.close()
+        print(response_headers)
+        return source_code
