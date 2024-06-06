@@ -1,5 +1,6 @@
 from url import URL
 import html
+from utils.timed_lru_cache import timed_lru_cache
 from browser_requests.request_strategy import LocalFileStrategy, UrlDataStrategy, HttpStrategy, ViewSourceStrategy
 
 def show(body: str) -> None:
@@ -17,6 +18,7 @@ def show_source(body: str) -> None:
     for c in decoded_body:
         print(c, end="")
 
+@timed_lru_cache(10)
 def load(url: URL) -> None:
     if url.scheme in ["http", "https", "file"]:
         if url.scheme == "http" or url.scheme == "https":
