@@ -127,5 +127,4 @@ class ViewSourceStrategy(SchemeStrategy):
         assert "content-encoding" not in response_headers
         
         s.close()
-        print(response_headers)
         return source_code
