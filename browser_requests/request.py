@@ -19,17 +19,18 @@ def show_source(body: str) -> None:
         print(c, end="")
 
 @timed_lru_cache(10)
-def load(url: URL) -> None:
+def load(url: URL) -> str:
     if url.scheme in ["http", "https", "file"]:
         if url.scheme == "http" or url.scheme == "https":
-            body = HttpStrategy.request(url)
+            body: str = HttpStrategy.request(url)
         elif url.scheme == "file":
-            body = LocalFileStrategy.request(url)
-        show(body)
+            body: str = LocalFileStrategy.request(url)
     
     elif url.scheme in ["data", "view-source"]:
         if url.scheme == "data":
-            body = UrlDataStrategy.request(url)
+            body: str = UrlDataStrategy.request(url)
         elif url.scheme == "view-source":
-            body = ViewSourceStrategy.request(url)
-        show_source(body)
+            body: str = ViewSourceStrategy.request(url)
+        
+        
+    return body
