@@ -2,8 +2,16 @@ from url import URL
 import html
 from utils.timed_lru_cache import timed_lru_cache
 from browser_requests.request_strategy import LocalFileStrategy, UrlDataStrategy, HttpStrategy, ViewSourceStrategy
-
-def show(body: str) -> None:
+            
+def show_source(body: str) -> str:
+    decoded_body = html.unescape(body)
+    text = ""
+    for c in decoded_body:
+        text += c
+    return text
+        
+def lex(body: str) -> str:
+    text: str = ""
     in_tag: bool = False
     for c in body:
         if c == "<":
@@ -11,12 +19,8 @@ def show(body: str) -> None:
         elif c == ">":
             in_tag = False
         elif not in_tag:
-            print(c, end="")
-            
-def show_source(body: str) -> None:
-    decoded_body = html.unescape(body)
-    for c in decoded_body:
-        print(c, end="")
+            text += c
+    return text
 
 @timed_lru_cache(10)
 def load(url: URL) -> str:
@@ -32,5 +36,13 @@ def load(url: URL) -> str:
         elif url.scheme == "view-source":
             body: str = ViewSourceStrategy.request(url)
         
-        
     return body
+
+@timed_lru_cache(10)
+def request(url: URL) -> str:
+    body = load(url)
+    
+    if url.scheme in ["data", "view-source"]:
+        return show_source(body)
+    
+    return lex(body)
